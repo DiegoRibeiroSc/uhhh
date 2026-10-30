@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Eventos - Windows 98 Edition</title>
+    <!-- Tailwind CSS para utilitários de layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 98.css para estilo autêntico do Windows 98 -->
+    <link rel="stylesheet" href="https://unpkg.com/98.css" />
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            background-color: #008080; /* Azul Marinho Clássico do Windows 98 */
+            font-family: "MS Sans Serif", Tahoma, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin: 0;
+            padding-bottom: 40px; /* Espaço para a barra de tarefas */
+            user-select: none;
+        }
+
+        .win98-shadow {
+            box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+        }
+
+        .inset-box {
+            box-shadow: inset -1px -1px #ffffff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080;
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        /* Barra de Tarefas Win98 */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 4px;
+            z-index: 9999;
+        }
+
+        .start-button {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            height: 24px;
+            padding: 2px 6px;
+        }
+
+        .taskbar-clock {
+            height: 22px;
+            padding: 2px 8px;
+            box-shadow: inset -1px -1px #ffffff, inset 1px 1px #808080;
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-4 md:p-6">
+
+    <!-- Janela Principal -->
+    <div class="window max-w-5xl mx-auto w-full my-auto shadow-2xl">
+        <!-- Barra de Título -->
+        <div class="title-bar">
+            <div class="title-bar-text flex items-center gap-2">
+                <span>📁</span> C:\WINDOWS\System32\Painel_Ferias_13Salario.exe
+            </div>
+            <div class="title-bar-controls">
+                <button aria-label="Minimize" onclick="alert('Minimizando aplicativo...')"></button>
+                <button aria-label="Maximize"></button>
+                <button aria-label="Close" onclick="alert('O sistema não pode ser fechado no momento.')"></button>
+            </div>
+        </div>
+
+        <!-- Conteúdo da Janela -->
+        <div class="window-body">
+            <!-- Barra de Ferramentas / Menu -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4 p-2 bg-[#c0c0c0] win98-shadow">
+                <div class="flex items-center gap-2 text-xs">
+                    <button class="px-3 py-1 font-bold" onclick="toggleSettingsModal(true)">
+                        ⚙️ Configurar Datas...
+                    </button>
+                    <button class="px-3 py-1" onclick="restoreDefaultDates()">
+                        🔄 Restaurar Padrões
+                    </button>
+                </div>
+                <div class="text-xs font-bold text-gray-700 px-2">
+                    🖥️ Status: Operacional
+                </div>
+            </div>
+
+            <fieldset>
+                <legend class="font-bold text-sm">Contagem Regressiva de Eventos Corporativos</legend>
+                
+                <!-- Grid de Cards Estilo Retrô -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2" id="cardsContainer">
+                    <!-- Cards gerados dinamicamente via JS -->
+                </div>
+            </fieldset>
+
+            <!-- Rodapé interno da janela -->
+            <div class="status-bar mt-4">
+                <p class="status-bar-field">Pronto</p>
+                <p class="status-bar-field">4 Objetos Carregados</p>
+                <p class="status-bar-field" id="systemDateDisplay">Ano: ----</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Datas (Janela de Diálogo Win98) -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="window w-full max-w-md shadow-2xl">
+            <div class="title-bar">
+                <div class="title-bar-text">Propriedades do Sistema - Ajuste de Datas</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Close" onclick="toggleSettingsModal(false)"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <p class="mb-4 text-xs">Insira os prazos para a atualização do cronômetro:</p>
+                
+                <form id="settingsForm" onsubmit="saveNewDates(event)" class="space-y-3 text-xs">
+                    <div class="field-row-stacked">
+                        <label for="inputVacationStart" class="font-bold">1. Início das Férias:</label>
+                        <input type="datetime-local" id="inputVacationStart" class="w-full" required />
+                    </div>
+
+                    <div class="field-row-stacked">
+                        <label for="inputVacationEnd" class="font-bold">2. Retorno das Férias:</label>
+                        <input type="datetime-local" id="inputVacationEnd" class="w-full" required />
+                    </div>
+
+                    <div class="field-row-stacked">
+                        <label for="inputThirteenth" class="font-bold">3. 1ª Parcela do 13º Salário:</label>
+                        <input type="datetime-local" id="inputThirteenth" class="w-full" required />
+                    </div>
+
+                    <div class="field-row-stacked">
+                        <label for="inputCompanyParty" class="font-bold">4. Festa de Fim de Ano:</label>
+                        <input type="datetime-local" id="inputCompanyParty" class="w-full" required />
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-4">
+                        <button type="submit" class="font-bold px-4">OK</button>
+                        <button type="button" onclick="toggleSettingsModal(false)" class="px-4">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Tarefas do Windows 98 -->
+    <div class="taskbar">
+        <button class="start-button" onclick="alert('Windows 98 - Edição Corporativa v4.10')">
+            <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" class="w-4 h-4" alt="Start">
+            <span>Iniciar</span>
+        </button>
+
+        <div class="flex-grow mx-2 flex gap-1 overflow-x-auto">
+            <button class="active text-xs flex items-center gap-1 h-6 px-2">
+                <span>📁</span> Painel_Ferias.exe
+            </button>
+        </div>
+
+        <div class="taskbar-clock" id="taskbarClock">
+            00:00 AM
+        </div>
+    </div>
+
+    <script>
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        document.getElementById('systemDateDisplay').textContent = `Ano Atual: ${currentYear}`;
+
+        // Configuração Padrão dos Eventos
+        const defaultEventsConfig = [
+            {
+                id: 'vacationStart',
+                title: 'Início das Férias',
+                icon: '🏖️',
+                defaultDate: `${currentYear}-12-20T18:00`
+            },
+            {
+                id: 'vacationEnd',
+                title: 'Retorno das Férias',
+                icon: '💼',
+                defaultDate: `${currentYear + 1}-01-10T08:00`
+            },
+            {
+                id: 'thirteenthPay',
+                title: '1ª Parcela do 13º',
+                icon: '💰',
+                defaultDate: `${currentYear}-11-30T12:00`
+            },
+            {
+                id: 'companyParty',
+                title: 'Festa da Empresa',
+                icon: '🎉',
+                defaultDate: `${currentYear}-12-18T19:30`
+            }
+        ];
+
+        let eventsData = {};
+
+        function loadEvents() {
+            const saved = localStorage.getItem('company_countdowns_dates');
+            if (saved) {
+                try { eventsData = JSON.parse(saved); } catch(e) { eventsData = {}; }
+            }
+            defaultEventsConfig.forEach(ev => {
+                if (!eventsData[ev.id]) {
+                    eventsData[ev.id] = ev.defaultDate;
+                }
+            });
+        }
+
+        function buildCardsHTML() {
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = '';
+
+            defaultEventsConfig.forEach(ev => {
+                const cardHTML = `
+                    <div class="window">
+                        <div class="title-bar">
+                            <div class="title-bar-text">${ev.icon} ${ev.title}</div>
+                        </div>
+                        <div class="window-body">
+                            <p class="text-xs mb-2 font-bold" id="formatted-date-${ev.id}">Data: Carregando...</p>
+                            
+                            <!-- Display de Segmento Digital Retrô -->
+                            <div class="grid grid-cols-4 gap-2 text-center my-2 p-2 inset-box">
+                                <div>
+                                    <div class="text-xl sm:text-2xl" id="days-${ev.id}">00</div>
+                                    <div class="text-[9px] text-gray-400">DIAS</div>
+                                </div>
+                                <div>
+                                    <div class="text-xl sm:text-2xl" id="hours-${ev.id}">00</div>
+                                    <div class="text-[9px] text-gray-400">HRS</div>
+                                </div>
+                                <div>
+                                    <div class="text-xl sm:text-2xl" id="minutes-${ev.id}">00</div>
+                                    <div class="text-[9px] text-gray-400">MIN</div>
+                                </div>
+                                <div>
+                                    <div class="text-xl sm:text-2xl text-yellow-300" id="seconds-${ev.id}">00</div>
+                                    <div class="text-[9px] text-gray-400">SEG</div>
+                                </div>
+                            </div>
+
+                            <div id="status-banner-${ev.id}" class="hidden text-center text-xs font-bold text-red-600 bg-yellow-100 p-1 border border-black mt-2">
+                                🔔 EVENTO ALCANÇADO / EM ANDAMENTO!
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        function formatDateReadable(isoString) {
+            const d = new Date(isoString);
+            if (isNaN(d.getTime())) return 'Data Inválida';
+            return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        }
+
+        function updateAllCountdowns() {
+            const currentTime = new Date().getTime();
+
+            defaultEventsConfig.forEach(ev => {
+                const targetIso = eventsData[ev.id];
+                const targetTime = new Date(targetIso).getTime();
+
+                const dateElem = document.getElementById(`formatted-date-${ev.id}`);
+                if (dateElem) dateElem.textContent = `Prazo: ${formatDateReadable(targetIso)}`;
+
+                const diff = targetTime - currentTime;
+
+                const daysElem = document.getElementById(`days-${ev.id}`);
+                const hoursElem = document.getElementById(`hours-${ev.id}`);
+                const minutesElem = document.getElementById(`minutes-${ev.id}`);
+                const secondsElem = document.getElementById(`seconds-${ev.id}`);
+                const statusBanner = document.getElementById(`status-banner-${ev.id}`);
+
+                if (diff <= 0) {
+                    if (daysElem) daysElem.textContent = '00';
+                    if (hoursElem) hoursElem.textContent = '00';
+                    if (minutesElem) minutesElem.textContent = '00';
+                    if (secondsElem) secondsElem.textContent = '00';
+                    if (statusBanner) statusBanner.classList.remove('hidden');
+                } else {
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    if (daysElem) daysElem.textContent = String(days).padStart(2, '0');
+                    if (hoursElem) hoursElem.textContent = String(hours).padStart(2, '0');
+                    if (minutesElem) minutesElem.textContent = String(minutes).padStart(2, '0');
+                    if (secondsElem) secondsElem.textContent = String(seconds).padStart(2, '0');
+                    if (statusBanner) statusBanner.classList.add('hidden');
+                }
+            });
+
+            // Relógio da barra de tarefas
+            const clockElem = document.getElementById('taskbarClock');
+            if (clockElem) {
+                clockElem.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+
+        function toggleSettingsModal(show) {
+            const modal = document.getElementById('settingsModal');
+            if (show) {
+                document.getElementById('inputVacationStart').value = eventsData.vacationStart || '';
+                document.getElementById('inputVacationEnd').value = eventsData.vacationEnd || '';
+                document.getElementById('inputThirteenth').value = eventsData.thirteenthPay || '';
+                document.getElementById('inputCompanyParty').value = eventsData.companyParty || '';
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function saveNewDates(e) {
+            e.preventDefault();
+            eventsData.vacationStart = document.getElementById('inputVacationStart').value;
+            eventsData.vacationEnd = document.getElementById('inputVacationEnd').value;
+            eventsData.thirteenthPay = document.getElementById('inputThirteenth').value;
+            eventsData.companyParty = document.getElementById('inputCompanyParty').value;
+
+            localStorage.setItem('company_countdowns_dates', JSON.stringify(eventsData));
+            updateAllCountdowns();
+            toggleSettingsModal(false);
+        }
+
+        function restoreDefaultDates() {
+            defaultEventsConfig.forEach(ev => { eventsData[ev.id] = ev.defaultDate; });
+            localStorage.removeItem('company_countdowns_dates');
+            updateAllCountdowns();
+        }
+
+        window.onload = function() {
+            loadEvents();
+            buildCardsHTML();
+            updateAllCountdowns();
+            setInterval(updateAllCountdowns, 1000);
+        };
+    </script>
+</body>
+</html>
